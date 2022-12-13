@@ -2,8 +2,11 @@
 #define LIB_TAR_H
 
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 
 typedef struct posix_header
 {                              /* byte offset */
@@ -26,10 +29,11 @@ typedef struct posix_header
     char padding[12];             /* 500 */
 } tar_header_t;
 
-#define TMAGIC   "ustar"        /* ustar and a null */
-#define TMAGLEN  6
-#define TVERSION "00"           /* 00 and no null */
-#define TVERSLEN 2
+#define TMAGIC      "ustar"        /* ustar and a null */
+#define TMAGLEN     6
+#define TVERSION    "00"           /* 00 and no null */
+#define TVERSLEN    2
+#define BLOCKSIZE   512
 
 /* Values used in typeflag field.  */
 #define REGTYPE  '0'            /* regular file */

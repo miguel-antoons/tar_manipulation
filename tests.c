@@ -36,8 +36,36 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    int ret = check_archive(fd);
-    printf("check_archive returned %d\n", ret);
+    // int ret = check_archive(fd);
+    // printf("check_archive returned %d\n", ret);
+
+    // int exist = exists(fd, "folder/tests.c");
+    // printf("exists returned %d\n", exist);
+
+    // int dir = is_dir(fd, "folder/");
+    // printf("is_dir returned %d\n", dir);
+
+    // create buffer to store the file
+    // size_t size = 100;
+    // uint8_t *buffer = malloc(size);
+
+    // read_file(fd, "folder/tests.c", 0, buffer, &size);
+    
+    // // print buffer
+    // for (int i = 0; i < size; i++){
+    //     printf("%c", buffer[i]);
+    // }
+    // printf("\n");
+
+    char *string_array[100] = {NULL};
+    size_t no_entries = 1;
+    printf("list returned %d\n", list(fd, "folder_sym", string_array, &no_entries));
+    printf("no_entries: %ld\n", no_entries);
+
+    for (int i = 0; i < no_entries; i++){
+        printf("%s\n", string_array[i]);
+    }
+       
 
     return 0;
 }
