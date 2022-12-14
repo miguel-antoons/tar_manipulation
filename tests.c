@@ -142,6 +142,7 @@ void test_list() {
 
     // create An array of char arrays, each one is long enough to contain a tar entry path.
     size_t no_entries = 4;
+    // char **string_array = malloc(no_entries * 100 * sizeof(char *));
     char *string_array[no_entries];
     char string[100] = {0};
     char string1[100] = {0};
@@ -157,10 +158,6 @@ void test_list() {
     //     char string[100] = {0};
     //     string_array[i] = string;
     // }
-
-    for (int i = 0; i < no_entries; i++) {
-        printf("address %d: %p\n", i, string_array[i]);
-    }
     
     printf("\n\nlist returned %d\n", list(fd, "folder_sym", string_array, &no_entries));
     printf("no_entries: %ld\n", no_entries);
