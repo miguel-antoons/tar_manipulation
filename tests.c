@@ -140,9 +140,29 @@ void test_list() {
         return;
     }
 
-    char *string_array[4] = {NULL};
+    // create An array of char arrays, each one is long enough to contain a tar entry path.
     size_t no_entries = 4;
-    printf("list returned %d\n", list(fd, "folder2", string_array, &no_entries));
+    char *string_array[no_entries];
+    char string[100] = {0};
+    char string1[100] = {0};
+    char string2[100] = {0};
+    char string3[100] = {0};
+
+    string_array[0] = string;
+    string_array[1] = string1;
+    string_array[2] = string2;
+    string_array[3] = string3;
+
+    // for (int i = 0; i < no_entries; i++) {
+    //     char string[100] = {0};
+    //     string_array[i] = string;
+    // }
+
+    for (int i = 0; i < no_entries; i++) {
+        printf("address %d: %p\n", i, string_array[i]);
+    }
+    
+    printf("\n\nlist returned %d\n", list(fd, "folder_sym", string_array, &no_entries));
     printf("no_entries: %ld\n", no_entries);
 
     for (int i = 0; i < no_entries; i++) printf("%s\n", string_array[i]);
@@ -155,7 +175,7 @@ void test_list() {
 
     printf("\n");
 
-    for (int i = 0; i < no_entries; i++) free(string_array[i]);
+    // for (int i = 0; i < no_entries; i++) free(string_array[i]);
 }
 
 int main(int argc, char **argv) {
@@ -167,8 +187,8 @@ int main(int argc, char **argv) {
     //test_check_archive();
     //test_exists();
     //test_is_dir();
-    test_read_file();
-    //test_list();
+    //test_read_file();
+    test_list();
 
     return 0;
 }

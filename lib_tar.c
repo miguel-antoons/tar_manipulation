@@ -196,22 +196,39 @@ int is_symlink(int tar_fd, char *path) {
  *         any other value otherwise.
  */
 int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
+    char real_path[100];
+    strcpy(real_path, path);
     tar_header_t header;
     const size_t expected_no_entries = *no_entries;
     *no_entries = 0;
     size_t path_len     = strlen(path);
-    int return_value    = 0;
 
+    if (real_path[path_len - 1] == '/') real_path[path_len - 1] = '\0';
+    
     while (NEXT_HEADER_EXISTS(tar_fd, header) && *no_entries < expected_no_entries) {
-        if (strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) {
+        char temp_str[100];
+        if (strcmp(header.name, real_path) == 0 && header.typeflag == SYMTYPE) {
             *no_entries = expected_no_entries;
-            return list(tar_fd, strcat(header.linkname, "/\0"), entries, no_entries);
+            size_t link_len = strlen(header.linkname);
+            header.linkname[link_len] = '/';
+            header.linkname[link_len + 1] = '\0';
+            return list(tar_fd, header.linkname, entries, no_entries);
         }
 
-        if (strncmp(header.name, path, path_len) == 0 && header.name[path_len - 1] == '/') {
-            return_value = 1;
+        // printf("header.name : %s, ", header.name);
+        // printf("dirname : %s, ", dirname(header.name));
+        // printf("path : %s \n ", path);
+        // printf("strinc comparaison : %d\n", strcmp(dirname(header.name), path));
+        strcpy(temp_str, header.name);
+        if (strcmp(dirname(temp_str), real_path) == 0 /*&& header.name[path_len - 1] == '/'*/) {
+            // printf("Ta MERE\n");
             if (strlen(header.name) > path_len + 1) {
-                entries[*no_entries] = strdup(header.name);
+                // printf("header.name : %s\n", header.name);
+                if (header.typeflag == SYMTYPE) memcpy(entries[*no_entries], header.linkname, strlen(header.linkname));
+                else memcpy(entries[*no_entries], header.name, strlen(header.name));
+                
+                // strcpy(entries[*no_entries], header.name);
+                // entries[*no_entries] = *header.name;
                 (*no_entries)++;
             } else if (header.typeflag != DIRTYPE) {
                 return 0;
@@ -221,7 +238,7 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
         goto_next_header(tar_fd, &header);
     }
 
-    return return_value;
+    return (int) *no_entries;
 }
 
 /**
