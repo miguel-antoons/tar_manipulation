@@ -24,48 +24,150 @@ void debug_dump(const uint8_t *bytes, size_t len) {
     }
 }
 
+
+/**  
+*   zero or positive value if the archive is valid, representing the number of non-null headers in the archive,
+*   -1 if the archive contains a header with an invalid magic value,
+*   -2 if the archive contains a header with an invalid version value,
+*   -3 if the archive contains a header with an invalid checksum value
+*/
+void test_check_archive() {
+    int fd = open("archive.tar", O_RDONLY);
+    if (fd == -1) {
+        perror("open(archive.tar)");
+        return;
+    }
+
+    int ret = check_archive(fd);
+    if(ret == 0){
+        printf("check_archive returned 0, archive is valid :D\n");
+    } else if (ret == -1){
+        printf("check_archive returned -1, archive contains a header with an invalid magic value\n");
+    } else if (ret == -2){
+        printf("check_archive returned -2, archive contains a header with an invalid version value\n");
+    } else if (ret == -3){
+        printf("check_archive returned -3, archive contains a header with an invalid checksum value\n");
+    } else {
+        printf("check_archive returned %d, archive is valid and contains %d non-null headers :D\n", ret, ret);
+    }
+
+    printf("\n");
+}
+
+void test_exists() {
+    int fd = open("archive.tar", O_RDONLY);
+    if (fd == -1) {
+        perror("open(archive.tar)");
+        return;
+    }
+
+    int ret = exists(fd, "folder/tests.c");
+    if(ret == 0) {
+        printf("exists returned 0, file exists :D\n");
+    } else {
+        printf("exists returned %d, file does not exist\n", ret);
+    }
+
+    printf("\n");
+}
+
+
+void test_is_dir() {
+    int fd = open("archive.tar", O_RDONLY);
+    if (fd == -1) {
+        perror("open(archive.tar)");
+        return;
+    }
+
+    int ret = is_dir(fd, "folder/");
+    if(ret == 0) {
+        printf("is_dir returned 0, folder exists :D\n");
+    } else {
+        printf("is_dir returned %d, folder does not exist\n", ret);
+    }
+
+    printf("\n");
+}
+
+/**
+ *  -1 if no entry at the given path exists in the archive or the entry is not a file,
+ *  -2 if the offset is outside the file total length,
+ *  zero if the file was read in its entirety into the destination buffer,
+ *  a positive value if the file was partially read, representing the remaining bytes left to be read to reach
+ *  the end of the file.
+*/
+
+void test_read_file() {
+    int fd = open("archive.tar", O_RDONLY);
+    if (fd == -1) {
+        perror("open(archive.tar)");
+        return;
+    }
+
+    // create buffer to store the file
+    size_t size = 100;
+    uint8_t *buffer = malloc(size);
+
+    read_file(fd, "folder/tests.c", 0, buffer, &size);
+
+   if(size == 0) {
+        printf("read_file returned 0, file was read in its entirety into the destination buffer :D\n");
+    } else if (size == -1) {
+        printf("read_file returned -1, no entry at the given path exists in the archive or the entry is not a file\n");
+    } else if (size == -2) {
+        printf("read_file returned -2, the offset is outside the file total length\n");
+    } else {
+        printf("read_file returned %ld, file was partially read, representing the remaining bytes left to be read to reach the end of the file :D\n", size);
+    }
+
+    printf("\n");
+
+    free(buffer);
+}
+
+
+
+/** 
+ *     zero if no directory at the given path exists in the archive,
+ *     any other value otherwise.
+*/
+
+void test_list() {
+    int fd = open("archive.tar", O_RDONLY);
+    if (fd == -1) {
+        perror("open(archive.tar)");
+        return;
+    }
+
+    char *string_array[100] = {NULL};
+    size_t no_entries = 10;
+    printf("list returned %d\n", list(fd, "folder2/", string_array, &no_entries));
+    printf("no_entries: %ld\n", no_entries);
+
+    for (int i = 0; i < no_entries; i++) printf("%s\n", string_array[i]);
+
+    if(no_entries == 0) {
+        printf("list returned 0, no directory at the given path exists in the archive :D\n");
+    } else {
+        printf("list returned %ld, any other value otherwise\n", no_entries);
+    }
+
+    printf("\n");
+
+    for (int i = 0; i < no_entries; i++) free(string_array[i]);
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         printf("Usage: %s tar_file\n", argv[0]);
         return -1;
     }
 
-    int fd = open(argv[1] , O_RDONLY);
-    if (fd == -1) {
-        perror("open(tar_file)");
-        return -1;
-    }
-
-    // int ret = check_archive(fd);
-    // printf("check_archive returned %d\n", ret);
-
-    // int exist = exists(fd, "folder/tests.c");
-    // printf("exists returned %d\n", exist);
-
-    // int dir = is_dir(fd, "folder/");
-    // printf("is_dir returned %d\n", dir);
-
-    // create buffer to store the file
-    // size_t size = 100;
-    // uint8_t *buffer = malloc(size);
-
-    // read_file(fd, "folder/tests.c", 0, buffer, &size);
-    
-    // // print buffer
-    // for (int i = 0; i < size; i++){
-    //     printf("%c", buffer[i]);
-    // }
-    // printf("\n");
-
-    char *string_array[100] = {NULL};
-    size_t no_entries = 1;
-    printf("list returned %d\n", list(fd, "folder_sym", string_array, &no_entries));
-    printf("no_entries: %ld\n", no_entries);
-
-    for (int i = 0; i < no_entries; i++){
-        printf("%s\n", string_array[i]);
-    }
-       
+    test_check_archive();
+    test_exists();
+    test_is_dir();
+    test_read_file();
+    test_list();
 
     return 0;
 }

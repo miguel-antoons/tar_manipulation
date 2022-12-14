@@ -69,8 +69,6 @@ int check_archive(int tar_fd) {
     int n_headers = 0;
     
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
-        printf("header.name: %s\n", header.name);
-        printf("header.linkname: %s\n", header.linkname);
         if (strncmp(header.magic,   TMAGIC,     TMAGLEN) != 0)  return -1;      // magic check
         if (strncmp(header.version, TVERSION,   TVERSLEN) != 0) return -2;      // version check
 
@@ -194,13 +192,16 @@ int is_symlink(int tar_fd, char *path) {
  */
 int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
     tar_header_t header;
-    // const size_t expected_no_entries    = *no_entries;
-    *no_entries                         = 0;
-    size_t path_len                     = strlen(path);
-    int return_value                    = 0;
+    const size_t expected_no_entries = *no_entries;
+    *no_entries = 0;
+    size_t path_len     = strlen(path);
+    int return_value    = 0;
 
-    while (NEXT_HEADER_EXISTS(tar_fd, header)) {
-        if (strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) return list(tar_fd, header.linkname, entries, no_entries);
+    while (NEXT_HEADER_EXISTS(tar_fd, header) && *no_entries < expected_no_entries) {
+        if (strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) {
+            *no_entries = expected_no_entries;
+            return list(tar_fd, strcat(header.linkname, "/"), entries, no_entries);
+        }
 
         if (strncmp(header.name, path, path_len) == 0) {
             return_value = 1;
@@ -211,7 +212,8 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
                 return 0;
             }
         }
-
+        // printf("header.name: %s\n", header.name);
+        // printf("header.linkname: %s\n", header.linkname);
         goto_next_header(tar_fd, &header);
     }
 
@@ -242,12 +244,14 @@ ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *
     lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
+        if (strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) return read_file(tar_fd, header.linkname, offset, dest, len);
+
         if(strcmp(header.name, path) == 0) {
             uint64_t size = strtoll(header.size, NULL, 8);
             if(offset > size) return -2;
 
             // get size of file content
-            if(size % BLOCKSIZE != 0) size += BLOCKSIZE - (size % BLOCKSIZE);   
+            size += (BLOCKSIZE - (size % BLOCKSIZE)) % BLOCKSIZE;
 
             // read maximum possible
             if(*len >= size - offset) *len = size - offset; 
