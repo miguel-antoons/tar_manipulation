@@ -205,12 +205,10 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
     int return_value = 1;
 
     if (real_path[path_len - 1] == '/') real_path[path_len - 1] = '\0';
+    size_t real_path_len = strlen(real_path);
     
     while (NEXT_HEADER_EXISTS(tar_fd, header) && *no_entries < expected_no_entries) {
-        if (strcmp(header.name, real_path) == 0 && header.typeflag == SYMTYPE) {
-            for (int i = 0; i < *no_entries; i++) {
-                entries[i] = NULL;
-            }
+        if (strcmp(header.name, real_path) == 0 && (header.typeflag == SYMTYPE || header.typeflag == LNKTYPE)) {
             *no_entries = expected_no_entries;
             return list(tar_fd, header.linkname, entries, no_entries);
         }
@@ -219,7 +217,7 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
         strcpy(temp_str, header.name);
         if (strcmp(dirname(temp_str), real_path) == 0) {
             return_value = 1;
-            if (strlen(header.name) > path_len) {
+            if (strlen(header.name) > real_path_len + 1) {
                 memcpy(entries[*no_entries], header.name, strlen(header.name));
                 (*no_entries)++;
             } else if (header.typeflag != DIRTYPE) {
