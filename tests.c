@@ -108,7 +108,7 @@ void test_read_file() {
     size_t size = 100;
     uint8_t *buffer = malloc(size);
 
-    read_file(fd, "folder/tests.c", 0, buffer, &size);
+    read_file(fd, "folder", 0, buffer, &size);
 
    if(size == 0) {
         printf("read_file returned 0, file was read in its entirety into the destination buffer :D\n");
@@ -139,9 +139,9 @@ void test_list() {
         return;
     }
 
-    char *string_array[100] = {NULL};
-    size_t no_entries = 10;
-    printf("list returned %d\n", list(fd, "folder2/", string_array, &no_entries));
+    char *string_array[4] = {NULL};
+    size_t no_entries = 4;
+    printf("list returned %d\n", list(fd, "folder2", string_array, &no_entries));
     printf("no_entries: %ld\n", no_entries);
 
     for (int i = 0; i < no_entries; i++) printf("%s\n", string_array[i]);
@@ -163,9 +163,9 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    test_check_archive();
-    test_exists();
-    test_is_dir();
+    //test_check_archive();
+    //test_exists();
+    //test_is_dir();
     test_read_file();
     test_list();
 

@@ -77,7 +77,7 @@ int check_archive(int tar_fd) {
         
         int i;
         char *header_char = (char *) &header;
-        for (i = 0; i < sizeof(header); i++)        sum += header_char[i];   // checksum
+        for (i = 0; i < sizeof(header); i++)        sum += *(header_char + i);   // checksum
         for (i = 0; i < sizeof(header.chksum); i++) sum -= ((uint8_t) header.chksum[i] - (uint8_t) ' ');
 
         if (sum != expected_chksum) return -3;
@@ -201,10 +201,10 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
     while (NEXT_HEADER_EXISTS(tar_fd, header) && *no_entries < expected_no_entries) {
         if (strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) {
             *no_entries = expected_no_entries;
-            return list(tar_fd, strcat(header.linkname, "/"), entries, no_entries);
+            return list(tar_fd, strcat(header.linkname, "/\0"), entries, no_entries);
         }
 
-        if (strncmp(header.name, path, path_len) == 0) {
+        if (strncmp(header.name, path, path_len) == 0 && header.name[path_len - 1] == '/') {
             return_value = 1;
             if (strlen(header.name) > path_len + 1) {
                 entries[*no_entries] = strdup(header.name);
@@ -213,8 +213,7 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
                 return 0;
             }
         }
-        // printf("header.name: %s\n", header.name);
-        // printf("header.linkname: %s\n", header.linkname);
+
         goto_next_header(tar_fd, &header);
     }
 
