@@ -105,19 +105,20 @@ void test_read_file() {
     }
 
     // create buffer to store the file
-    size_t size = 100;
+    size_t size = 9728;
     uint8_t *buffer = malloc(size);
 
-    read_file(fd, "folder/tests.c", 0, buffer, &size);
+    size_t ret = read_file(fd, "lib_tar.c", 6000, buffer, &size);
+    printf("read_file returned %ld\n", ret);
 
-   if(size == 0) {
+   if(ret == 0) {
         printf("read_file returned 0, file was read in its entirety into the destination buffer :D\n");
-    } else if (size == -1) {
+    } else if (ret == -1) {
         printf("read_file returned -1, no entry at the given path exists in the archive or the entry is not a file\n");
-    } else if (size == -2) {
+    } else if (ret == -2) {
         printf("read_file returned -2, the offset is outside the file total length\n");
     } else {
-        printf("read_file returned %ld, file was partially read, representing the remaining bytes left to be read to reach the end of the file :D\n", size);
+        printf("read_file returned %ld, file was partially read, representing the remaining bytes left to be read to reach the end of the file :D\n", ret);
     }
 
     printf("\n");
@@ -163,11 +164,11 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    test_check_archive();
-    test_exists();
-    test_is_dir();
+    //test_check_archive();
+    //test_exists();
+    //test_is_dir();
     test_read_file();
-    test_list();
+    //test_list();
 
     return 0;
 }

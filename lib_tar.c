@@ -77,7 +77,7 @@ int check_archive(int tar_fd) {
         
         int i;
         char *header_char = (char *) &header;
-        for (i = 0; i < sizeof(header); i++)        sum += header_char[i];   // checksum
+        for (i = 0; i < sizeof(header); i++)        sum += *(header_char + i);   // checksum
         for (i = 0; i < sizeof(header.chksum); i++) sum -= ((uint8_t) header.chksum[i] - (uint8_t) ' ');
 
         if (sum != expected_chksum) return -3;
@@ -100,6 +100,7 @@ int check_archive(int tar_fd) {
  */
 int exists(int tar_fd, char *path) {
     tar_header_t header;
+    lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
         if (strcmp(header.name, path) == 0) return 1;
@@ -120,6 +121,7 @@ int exists(int tar_fd, char *path) {
  */
 int is_dir(int tar_fd, char *path) {
     tar_header_t header;
+    lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
         if (strcmp(header.name, path) == 0 && header.typeflag == DIRTYPE) return 1;
@@ -140,6 +142,7 @@ int is_dir(int tar_fd, char *path) {
  */
 int is_file(int tar_fd, char *path) {
     tar_header_t header;
+    lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
         if(strcmp(header.name, path) == 0 && (header.typeflag == REGTYPE || header.typeflag == AREGTYPE)) return 1;
@@ -159,6 +162,7 @@ int is_file(int tar_fd, char *path) {
  */
 int is_symlink(int tar_fd, char *path) {
     tar_header_t header;
+    lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
         if(strcmp(header.name, path) == 0 && header.typeflag == SYMTYPE) return 1;
@@ -241,7 +245,8 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
  */
 ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len) {
     tar_header_t header;
-    if(!is_file(tar_fd, path)) return -1;
+
+    if((!is_file(tar_fd, path) && !is_symlink(tar_fd, path))) return -1;
     lseek(tar_fd, 0, SEEK_SET);
 
     while (NEXT_HEADER_EXISTS(tar_fd, header)) {
@@ -250,18 +255,14 @@ ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *
         if(strcmp(header.name, path) == 0) {
             uint64_t size = strtoll(header.size, NULL, 8);
             if(offset > size) return -2;
-
-            // get size of file content
-            size += (BLOCKSIZE - (size % BLOCKSIZE)) % BLOCKSIZE;
-
+            
             // read maximum possible
             if(*len >= size - offset) *len = size - offset; 
 
             lseek(tar_fd, (off_t) offset, SEEK_CUR);
             read(tar_fd, dest, *len);
 
-            if(size - offset - *len == 0)   return 0;
-            else                            return size - offset - *len;
+            return size - offset - *len;
         }
 
         goto_next_header(tar_fd, &header);
