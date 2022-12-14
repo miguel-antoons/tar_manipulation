@@ -76,7 +76,8 @@ int check_archive(int tar_fd) {
         uint64_t expected_chksum    = strtoll(header.chksum, NULL, 8);
         
         int i;
-        for (i = 0; i < sizeof(header); i++)        sum += ((uint8_t *) &header)[i];   // checksum
+        char *header_char = (char *) &header;
+        for (i = 0; i < sizeof(header); i++)        sum += header_char[i];   // checksum
         for (i = 0; i < sizeof(header.chksum); i++) sum -= ((uint8_t) header.chksum[i] - (uint8_t) ' ');
 
         if (sum != expected_chksum) return -3;
