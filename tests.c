@@ -163,7 +163,7 @@ void test_list() {
     //     string_array[i] = string;
     // }
     
-    printf("\n\nlist returned %d\n", list(fd, "folder2/folder1/", string_array, &no_entries));
+    printf("\n\nlist returned %d\n", list(fd, "folder_sym/", string_array, &no_entries));
     printf("no_entries: %ld\n", no_entries);
 
     for (int i = 0; i < no_entries; i++) printf("%s\n", string_array[i]);
